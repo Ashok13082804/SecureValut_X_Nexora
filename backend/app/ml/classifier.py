@@ -28,20 +28,35 @@ class MLThreatClassifier:
             np.zeros(n_clean)                       # pdf_exploit_indicator
         ])
         
-        # Malicious features: high entropy, low printable or high tokens/macros/exploits
-        malicious_features = np.column_stack([
-            np.random.uniform(0.2, 0.8, n_malicious),
-            np.random.uniform(0.70, 1.0, n_malicious), # high entropy
-            np.random.uniform(0.1, 0.6, n_malicious),  # low printable
-            np.random.uniform(0.1, 0.4, n_malicious),  # high null
-            np.random.choice([0.75, 0.85, 0.95], n_malicious),
-            np.random.uniform(0.3, 1.0, n_malicious),
-            np.random.choice([0.0, 1.0], n_malicious, p=[0.4, 0.6]),
-            np.random.choice([0.0, 0.5, 1.0], n_malicious, p=[0.5, 0.3, 0.2])
+        # Binary/packed malware (100 samples): high entropy, low printable, high null bytes, high extension risk
+        n_bin_mal = 100
+        binary_malicious = np.column_stack([
+            np.random.uniform(0.2, 0.8, n_bin_mal),
+            np.random.uniform(0.70, 1.0, n_bin_mal), # high entropy
+            np.random.uniform(0.05, 0.5, n_bin_mal), # low printable
+            np.random.uniform(0.1, 0.4, n_bin_mal),  # high null
+            np.random.choice([0.85, 0.95], n_bin_mal),
+            np.random.uniform(0.0, 0.4, n_bin_mal),
+            np.zeros(n_bin_mal),
+            np.random.choice([0.0, 0.5, 1.0], n_bin_mal, p=[0.7, 0.2, 0.1])
         ])
         
+        # Script/Macro/Document threats (100 samples): high printable, moderate entropy, high suspicious tokens or macros
+        n_script_mal = 100
+        script_malicious = np.column_stack([
+            np.random.uniform(0.05, 0.4, n_script_mal),
+            np.random.uniform(0.3, 0.65, n_script_mal), # moderate entropy
+            np.random.uniform(0.8, 1.0, n_script_mal),  # high printable (ASCII/script)
+            np.random.uniform(0.0, 0.05, n_script_mal), # low null
+            np.random.choice([0.75, 0.85, 0.90, 0.95], n_script_mal), # ps1, bat, vbs, docm
+            np.random.uniform(0.33, 1.0, n_script_mal), # multiple suspicious tokens
+            np.random.choice([0.0, 1.0], n_script_mal, p=[0.5, 0.5]),
+            np.random.choice([0.0, 0.5, 1.0], n_script_mal, p=[0.6, 0.2, 0.2])
+        ])
+        
+        malicious_features = np.vstack([binary_malicious, script_malicious])
         X = np.vstack([clean_features, malicious_features])
-        y = np.array([0] * n_clean + [1] * n_malicious)
+        y = np.array([0] * n_clean + [1] * (n_bin_mal + n_script_mal))
         
         self.rf_model.fit(X, y)
         self.iso_forest.fit(clean_features) # fit isolation forest on clean baseline

@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: secureai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: secureai_user
+      POSTGRES_PASSWORD: secureai_password_2026!
+      POSTGRES_DB: secureai_vault
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U secureai_user -d secureai_vault"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: secureai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: secureai-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      - DATABASE_URL=postgresql://secureai_user:secureai_password_2026!@postgres:5432/secureai_vault
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=e7c638f29d8b4e72a8c3d2f1b4a6e8c9d0f2a4b6c8e0d2f4a6b8c0e2d4f6a8b0
+      - AES_MASTER_KEY=4f8a3c2b1e9d8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b7c6d5e4f3a
+      - STORAGE_PATH=/app/secure_storage
+      - ENABLE_DEMO_DATA=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./secure_storage:/app/secure_storage
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: secureai-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  postgres_data:
+  redis_data:
