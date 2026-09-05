@@ -52,16 +52,14 @@ fi
 # Detect python binary
 if [ -f "venv/bin/python3" ]; then
     VENV_PYTHON="venv/bin/python3"
-    VENV_PIP="venv/bin/pip"
 else
     VENV_PYTHON="python3"
-    VENV_PIP="pip3"
 fi
 
 echo "Installing/verifying backend dependencies..."
-$VENV_PIP install -q -r backend/requirements.txt || {
-    echo -e "${YELLOW}Retrying pip install with user privileges...${NC}"
-    $VENV_PIP install -r backend/requirements.txt
+$VENV_PYTHON -m pip install -q -r backend/requirements.txt || {
+    echo -e "${YELLOW}Retrying pip install with verbose output...${NC}"
+    $VENV_PYTHON -m pip install -r backend/requirements.txt
 }
 echo -e "${GREEN}✓ Backend dependencies installed successfully.${NC}"
 

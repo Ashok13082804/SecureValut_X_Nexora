@@ -89,8 +89,10 @@ app.include_router(reports_router, prefix=api_prefix)
 app.include_router(users_router, prefix=api_prefix)
 app.include_router(demo_router, prefix=api_prefix)
 
-# Health Check
+# Health Check Endpoints
 @app.get("/health")
+@app.get("/api/health")
+@app.get(f"{settings.API_V1_STR}/health")
 def health_check():
     return {
         "status": "HEALTHY",
